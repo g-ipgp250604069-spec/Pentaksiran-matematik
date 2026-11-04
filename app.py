@@ -40,7 +40,7 @@ if API_KEY:
     # Paparkan gambar yang dimuat naik
     image = Image.open(uploaded_file)
     st.image(
-        image, caption="Gambar lukisan/jawapan yang dihantar", use_width=True
+        image, caption="Gambar lukisan/jawapan yang dihantar", use_container_width=True
     )
 
     if st.button("🚀 Semak Jawapan Sekarang"):
