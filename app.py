@@ -78,7 +78,7 @@ if API_KEY:
                         3. **Ulasan & Sebab Markah:** (Berikan pujian pada bahagian yang betul dan panduan penambahbaikan).
                         """
 
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-3.6-flash")
             response = model.generate_content([prompt, image])
             hasil_ai = response.text
 
