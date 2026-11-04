@@ -7,10 +7,7 @@ import streamlit as st
 # ==========================================
 # TETAPAN KUNCI API MENGGUNAKAN STREAMLIT SECRETS
 # ==========================================
-# Kod ini akan mengambil kunci API secara automatik daripada fail rahsia sistem
 API_KEY = st.secrets["GEMINI_API_KEY"]
-
-# Konfigurasi Gemini API di latar belakang
 genai.configure(api_key=API_KEY)
 
 # 1. Konfigurasi Halaman Web Streamlit
@@ -32,13 +29,13 @@ nama_murid = st.text_input(
     "Nama Penuh Murid:", placeholder="Sila masukkan nama penuh anda di sini..."
 )
 
-# Pilihan Soalan (Merujuk kepada tugasan 6a, 6b, 6c)[cite: 1]
+# Pilihan Soalan
 soalan_pilihan = st.selectbox(
     "Pilih Soalan Tugasan yang Ingin Disemak:",
     [
-        "Soalan 6(a) - Pentagon Sekata (Sempadan Taman Bunga)[cite: 1]",
-        "Soalan 6(b) - Pelan Bulatan Kolam Renang & Ukuran[cite: 1]",
-        "Soalan 6(c) - Pemilihan Saiz Papan Pelapik Kek[cite: 1]",
+        "Soalan 6(a) - Pentagon Sekata (Sempadan Taman Bunga)",
+        "Soalan 6(b) - Pelan Bulatan Kolam Renang & Ukuran",
+        "Soalan 6(c) - Pemilihan Saiz Papan Pelapik Kek",
     ],
 )
 
@@ -114,7 +111,8 @@ if "data_rekod" in st.session_state and len(st.session_state.data_rekod) > 0:
   df.to_excel(output, index=False, sheet_name="Markah Murid")
   output.close()
 
-  with open("rekod_pbd_murid.xlsx", "rb) as f:
+  # PEMBETULAN PADA BARIS INI (Tanda petua penutup "rb" sudah lengkap)
+  with open("rekod_pbd_murid.xlsx", "rb") as f:
     st.download_button(
         label="📥 Muat Turun Fail Excel Rekod PBD (.xlsx)",
         data=f,
