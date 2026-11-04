@@ -62,7 +62,7 @@ try:
                     3. **Ulasan & Sebab Markah:** (Berikan pujian pada bahagian yang betul dan panduan penambahbaikan jika ada kesilapan).
                     """
 
-          model = genai.GenerativeModel("gemini-2.0-flash")
+          model = genai.GenerativeModel("gemini-3.6-flash")
           response = model.generate_content([prompt, image])
 
           st.success("Semakan berjaya!")
