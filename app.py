@@ -1,62 +1,84 @@
 from datetime import datetime
 import google.generativeai as genai
+import gspread
 from PIL import Image
-import pandas as pd
 import streamlit as st
 
 # ==========================================
-# TETAPAN KUNCI API MENGGUNAKAN STREAMLIT SECRETS
+# TETAPAN KUNCI API & GOOGLE SHEETS (SECRETS)
 # ==========================================
 API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
 
-# 1. Konfigurasi Halaman Web Streamlit
+
+def simpan_ke_google_sheets(tarikh, nama, soalan, ulasan):
+  try:
+    gc = gspread.service_account_from_dict(
+        dict(st.secrets["gcp_service_account"])
+    )
+    sh = gc.open("Rekod PBD Matematik")
+    worksheet = sh.sheet1
+    worksheet.append_row([tarikh, nama, soalan, ulasan])
+    return True
+  except Exception as e:
+    st.error(f"Gagal menyimpan ke Google Sheets secara automatik. Ralat: {e}")
+    return False
+
+
+# ==========================================
+# PAPARAN ANTARA MUKA APLIKASI (UI)
+# ==========================================
 st.set_page_config(
     page_title="Penilaian Matematik PBD", page_icon="📐", layout="centered"
 )
 
 st.title("📐 Sistem Semakan & Pentaksiran Lukisan Matematik")
 st.write(
-    "Sila masukkan nama anda, pilih soalan, muat naik gambar lukisan,"
-    " dan dapatkan maklum balas serta markah serta-merta."
+    "Sila masukkan nama anda, pilih soalan, ambil gambar lukisan menggunakan"
+    " kamera, dan dapatkan maklum balas serta markah serta-merta."
 )
 
 st.divider()
 st.subheader("📝 Maklumat Murid & Tugasan")
 
-# --- RUANG KELAS / NAMA MURID ---
+# Ruang Nama Murid
 nama_murid = st.text_input(
     "Nama Penuh Murid:", placeholder="Sila masukkan nama penuh anda di sini..."
 )
 
-# Pilihan Soalan
+# Pilihan Soalan (Merujuk kepada tugasan 6a, 6b, 6c)[cite: 1]
 soalan_pilihan = st.selectbox(
     "Pilih Soalan Tugasan yang Ingin Disemak:",
     [
-        "Soalan 6(a) - Pentagon Sekata (Sempadan Taman Bunga)",
-        "Soalan 6(b) - Pelan Bulatan Kolam Renang & Ukuran",
-        "Soalan 6(c) - Pemilihan Saiz Papan Pelapik Kek",
+        "Soalan 6(a) - Pentagon Sekata (Sempadan Taman Bunga)[cite: 1]",
+        "Soalan 6(b) - Pelan Bulatan Kolam Renang & Ukuran[cite: 1]",
+        "Soalan 6(c) - Pemilihan Saiz Papan Pelapik Kek[cite: 1]",
     ],
 )
 
-# Bahagian Muat Naik Gambar oleh Murid
-uploaded_file = st.file_uploader(
-    "Sila snap dan muat naik gambar jawapan/lukisan anda di sini (JPG/PNG):",
-    type=["jpg", "jpeg", "png"],
+st.divider()
+st.subheader("📸 Ambil Gambar Lukisan Anda")
+st.write(
+    "Tekan butang **'Take Photo'** di bawah untuk membuka kamera peranti anda."
 )
+
+# --- FUNGSI KAMERA TERUS DALAM APLIKASI ---
+uploaded_file = st.camera_input("Kamera Penilaian Lukisan")
 
 if uploaded_file is not None:
   image = Image.open(uploaded_file)
-  st.image(image, caption="Gambar lukisan/jawapan yang dihantar", width=400)
+  st.success("Gambar berjaya diambil! Sila semak paparan di atas.")
 
   if st.button("🚀 Semak Jawapan Sekarang"):
     if not nama_murid.strip():
       st.warning(
-          "⚠️ Sila masukkan Nama Penuh anda terlebih dahulu sebelum menekan"
-          " butang semak!"
+          "⚠️ Sila masukkan Nama Penuh anda terlebih dahulu di atas sebelum"
+          " menekan butang semak!"
       )
     else:
-      with st.spinner("AI sedang menilai lukisan dan jawapan anda..."):
+      with st.spinner(
+          "AI sedang menilai lukisan dan merekod markah ke Google Sheets..."
+      ):
         try:
           # Prompt & Rubrik Pemarkahan (0 - 5)
           prompt = f"""
@@ -76,48 +98,28 @@ if uploaded_file is not None:
                         3. **Ulasan & Sebab Markah:** (Berikan pujian pada bahagian yang betul dan panduan penambahbaikan).
                         """
 
-          model = genai.GenerativeModel("gemini-3.5-flash")
+          model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([prompt, image])
           hasil_ai = response.text
 
-          st.success("Semakan berjaya!")
+          st.success("Semakan berjaya dan markah telah direkodkan!")
           st.markdown("### 📋 Keputusan & Maklum Balas AI:")
           st.markdown(hasil_ai)
 
-          # --- SIMPAN DATA KE REKOD EXCEL ---
-          if "data_rekod" not in st.session_state:
-            st.session_state.data_rekod = []
+          # --- HANTAR DATA TERUS KE GOOGLE SHEETS ---
+          tarikh_masa = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+          berjaya_simpan = simpan_ke_google_sheets(
+              tarikh_masa, nama_murid, soalan_pilihan, hasil_ai
+          )
 
-          st.session_state.data_rekod.append({
-              "Tarikh/Masa": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-              "Nama Murid": nama_murid,
-              "Soalan": soalan_pilihan,
-              "Maklum Balas & Markah AI": hasil_ai,
-          })
+          if berjaya_simpan:
+            st.toast(
+                "✅ Data berjaya dikemas kini dalam Google Sheets Cikgu!",
+                icon="📊",
+            )
 
         except Exception as e:
           st.error(
               f"Berlaku ralat semasa memproses gambar. Sila cuba lagi. Ralat:"
               f" {e}"
           )
-
-# Bahagian untuk Cikgu Muat Turun Fail Excel
-if "data_rekod" in st.session_state and len(st.session_state.data_rekod) > 0:
-  st.divider()
-  st.subheader("📊 Panel Guru: Muat Turun Rekod Markah")
-  df = pd.DataFrame(st.session_state.data_rekod)
-
-  output = pd.ExcelWriter("rekod_pbd_murid.xlsx", engine="openpyxl")
-  df.to_excel(output, index=False, sheet_name="Markah Murid")
-  output.close()
-
-  # PEMBETULAN PADA BARIS INI (Tanda petua penutup "rb" sudah lengkap)
-  with open("rekod_pbd_murid.xlsx", "rb") as f:
-    st.download_button(
-        label="📥 Muat Turun Fail Excel Rekod PBD (.xlsx)",
-        data=f,
-        file_name="rekod_pbd_murid.xlsx",
-        mime=(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ),
-    )
