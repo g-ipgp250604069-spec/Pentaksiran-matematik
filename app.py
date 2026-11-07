@@ -1,29 +1,13 @@
 from datetime import datetime
 import google.generativeai as genai
-import gspread
 from PIL import Image
 import streamlit as st
 
 # ==========================================
-# TETAPAN KUNCI API & GOOGLE SHEETS (SECRETS)
+# TETAPAN KUNCI API (MENGGUNAKAN STREAMLIT SECRETS)
 # ==========================================
 API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
-
-
-def simpan_ke_google_sheets(tarikh, nama, soalan, ulasan):
-  try:
-    gc = gspread.service_account_from_dict(
-        dict(st.secrets["gcp_service_account"])
-    )
-    sh = gc.open("Rekod PBD Matematik")
-    worksheet = sh.sheet1
-    worksheet.append_row([tarikh, nama, soalan, ulasan])
-    return True
-  except Exception as e:
-    st.error(f"Gagal menyimpan ke Google Sheets secara automatik. Ralat: {e}")
-    return False
-
 
 # ==========================================
 # PAPARAN ANTARA MUKA APLIKASI (UI)
@@ -76,9 +60,7 @@ if uploaded_file is not None:
           " menekan butang semak!"
       )
     else:
-      with st.spinner(
-          "AI sedang menilai lukisan dan merekod markah ke Google Sheets..."
-      ):
+      with st.spinner("AI sedang menilai lukisan dan jawapan anda..."):
         try:
           # Prompt & Rubrik Pemarkahan (0 - 5)
           prompt = f"""
@@ -102,21 +84,9 @@ if uploaded_file is not None:
           response = model.generate_content([prompt, image])
           hasil_ai = response.text
 
-          st.success("Semakan berjaya dan markah telah direkodkan!")
+          st.success(f"Tahniah, {nama_murid}! Semakan selesai.")
           st.markdown("### 📋 Keputusan & Maklum Balas AI:")
           st.markdown(hasil_ai)
-
-          # --- HANTAR DATA TERUS KE GOOGLE SHEETS ---
-          tarikh_masa = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-          berjaya_simpan = simpan_ke_google_sheets(
-              tarikh_masa, nama_murid, soalan_pilihan, hasil_ai
-          )
-
-          if berjaya_simpan:
-            st.toast(
-                "✅ Data berjaya dikemas kini dalam Google Sheets Cikgu!",
-                icon="📊",
-            )
 
         except Exception as e:
           st.error(
