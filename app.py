@@ -1,4 +1,3 @@
-from datetime import datetime
 import google.generativeai as genai
 from PIL import Image
 import streamlit as st
@@ -30,7 +29,7 @@ nama_murid = st.text_input(
     "Nama Penuh Murid:", placeholder="Sila masukkan nama penuh anda di sini..."
 )
 
-# Pilihan Soalan (Merujuk kepada tugasan 6a, 6b, 6c)[cite: 1]
+# Pilihan Soalan[cite: 1]
 soalan_pilihan = st.selectbox(
     "Pilih Soalan Tugasan yang Ingin Disemak:",
     [
@@ -87,6 +86,26 @@ if uploaded_file is not None:
           st.success(f"Tahniah, {nama_murid}! Semakan selesai.")
           st.markdown("### 📋 Keputusan & Maklum Balas AI:")
           st.markdown(hasil_ai)
+
+          st.divider()
+
+          # --- BAHAGIAN PERINGATAN ROBOT DI BAWAH ---
+          col1, col2 = st.columns([1, 3])
+
+          with col1:
+            try:
+              # Memaparkan gambar robot (pastikan fail bernama robot.png dalam folder yang sama)
+              st.image("robot.png", width=120)
+            except Exception:
+              st.text("🤖")  # Fallback emoji jika gambar tidak terjumpa
+
+          with col2:
+            st.info(
+                f"🤖 **Pesanan untuk {nama_murid}:**\n\nTahniah kerana sudah"
+                " menamatkan pentaksiran ini! Jangan lupa catat markah kamu"
+                " dan isi pada ruang pembelajaran selepas ini ya. Teruskan"
+                " berusaha!"
+            )
 
         except Exception as e:
           st.error(
